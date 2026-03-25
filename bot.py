@@ -1,9 +1,9 @@
 import json
 import logging
-import utils.constants as constants
 
+import utils.constants as constants
 from db import DatabaseManager
-#from utils.constants import MUSICAL_KEYS
+from musicbrainz.editing import MusicBrainzEditing
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +59,17 @@ if __name__ == '__main__':
         level = config["log"]["log_level"])
 
     logger.info("--- BOT STARTING ---")
+    
+    mb_editing = MusicBrainzEditing(config)
+    
+    mb_open_edit_count = mb_editing.open_edits_count()
+    
+    # continuing if max_open_edits set at the config file is smaller than the amount of actual open edits
+    if  mb_open_edit_count < config['config']['max_open_edits']:
+        
+        print(f'Open edits: {mb_open_edit_count}')   
 
-    works = works_without_key()
-
-    print(f'Count of works without a key: {len(works)}')
+    #works = works_without_key()
+    #print(f'Count of works without a key: {len(works)}')
 
     logger.info("--- BOT STOPPING ---")
