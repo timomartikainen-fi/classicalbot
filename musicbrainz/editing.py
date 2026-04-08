@@ -1,75 +1,73 @@
 import re
-import requests
-from bs4 import BeautifulSoup
+
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 import logging
 
 logger = logging.getLogger(__name__)
-    
+   
 class MusicBrainzEditing():
              
     def __init__(self, config):
-    
-        self.useragent = config['bot']['user_agent']
-        self.contact = config['bot']['user_agent']
         
         self.server = config['musicbrainz']['host']
         self.username = config['musicbrainz']['user']
         self.password = config['musicbrainz']['password']
         
-        self.session = None
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless=new')
+        options.add_argument("--no-sandbox")
+        options.add_argument(f"user-agent={config['bot']['user_agent']} ( {config['bot']['user_agent']} )")
         
+        self.driver = webdriver.Chrome(options=options)
+        self.wait = WebDriverWait(self.driver, 10)    
+               
         self.login(self.server, self.username, self.password)
         
-    def __del__(self):
-    
-        self.session.close()
-        
     def login(self, server, username, password):
-    
-        login_url = server + "/login"
+          
+        self.driver.get(server + "/login")
         
-        self.session = requests.Session()
+        login_form = self.driver.find_element(By.XPATH, "//form[contains(@action, '/login')]")
         
-        # setting default header
-        self.session.headers = {
-            "User-Agent": self.useragent,
-            "From": self.contact
-        }
+        login_form.find_element(By.NAME, "username").send_keys(username)
+        login_form.find_element(By.NAME, "password").send_keys(password)
+        login_form.find_element(By.TAG_NAME, "button").click()
+        
+        WebDriverWait(self.driver, 10).until(EC.url_changes(server + "/login"))
 
-        get_login_html = self.session.get(login_url)
-        
-        login_html = BeautifulSoup(get_login_html.content, 'html5lib')
-        
-        login_form_html = login_html.body.find('form', attrs = {'action': '/login'})
-        
-        # mandatory fields for the login form
-        login_data = {
-            "username": username,
-            "password": password,
-            "csrf_session_key": login_form_html.find('input', attrs = {'name': 'csrf_session_key'})['value'],
-            "csrf_token": login_form_html.find('input', attrs = {'name': 'csrf_token'})['value'],
-        }
-        
-        post_login = self.session.post(login_url, data = login_data)
-        
-        if post_login.url == server + "/user/" + username:
+        if self.driver.current_url == server + "/user/" + username:
             logger.info(f'User \'{username}\' logged in at \'{server}\'')
         else:
             logger.info(f'User \'{username}\' failed to login at \'{server}\'')
             exit()
-    
-    def open_edits_count(self):        
-       
-        url = self.server + "/user/" + self.username + "/edits/open"
-        
-        get_open_edits_html = self.session.get(url)
-        
-        open_edits_html = BeautifulSoup(get_open_edits_html.content, 'html5lib')
 
-        results_div = open_edits_html.find('div', attrs = {'class': 'search-toggle'})
+    def open_edits_count(self):
         
-        result_text = results_div.find('strong').string
-             
-        m = re.search(r"Found (?:at least )?([0-9]+) edits?", result_text)
+        self.driver.get(self.server + "/user/" + self.username + "/edits/open")
         
-        return int(m.group(1))
+        try:
+        
+            results_div = self.wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "search-toggle"))
+            )
+            
+            result_text = results_div.find_element(By.TAG_NAME, "strong").text
+            
+            m = re.search(r"Found (?:at least )?([0-9]+) edits?", result_text)
+            
+            if m:
+                count = int(m.group(1))
+                logger.info(f"Found {count} open edits.")
+                return count
+            else:
+                logger.warning("Could not find edit count.")
+                return 0
+            
+        except TimeoutException:
+            logger.error("Timed out waiting for the edits page to load.")
+            return 0
