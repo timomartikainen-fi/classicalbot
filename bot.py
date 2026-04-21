@@ -35,10 +35,10 @@ if __name__ == '__main__':
 
     with mb_editing as mb:
 
-        mb_open_edit_count = mb.open_edits_count()
-        print(f'Open edits: {mb_open_edit_count}')
+        #mb_open_edit_count = mb.open_edits_count()
+        #print(f'Open edits: {mb_open_edit_count}')
 
-        #mb.set_work_key('d5a6d2a2-298b-41e8-94ae-507393d775d8')
+        mb.set_work_key('d5a6d2a2-298b-41e8-94ae-507393d775d8','G major')
 
 
     #max_edits = config['config']['max_open_edits'] - mb_open_edit_count
@@ -53,21 +53,10 @@ if __name__ == '__main__':
         for i in range(min(max_edits, max_daily_edits)):
 
             print(f'Edit {i+1}')
-'''
     #db = MusicBrainzDatabase(config)
     #works = db.works_without_key()
     #print(works)
     #print(f'Count of works without a key: {len(works)}')
-
-    '''
-    check db
-    check api
-    update via editing
-    edit-work.attributes.0.type_id  1
-    edit-work.attributes.0.value    11
-    edit-work.edit_note             "note"
-
-    https://test.musicbrainz.org/ws/2/work/d5a6d2a2-298b-41e8-94ae-507393d775d8?fmt=json
 
     '''
 

@@ -81,75 +81,55 @@ class MusicBrainzEditing():
             logger.error("Timed out waiting for the edits page to load.")
             return 0
 
-    # Sets a musical key for a work, but only if no key is previously selected (= supports only 1 key per work)
-    def set_work_key(self, mbid):
+    # sets a musical key for a work, but only if no key is previously selected (= supports only 1 key per work)
+    def set_work_key(self, mbid, key):
 
         try:
-
+            
             self.driver.get(self.server + "/work/" + mbid + "/edit")
             wait = WebDriverWait(self.driver, 10)
 
-            ##type_dropdown_xpath = "//tr[contains(., 'Key')]//select[contains(@name, 'edit-work.attributes')]"
-
-            # checking if there's a key already set
-            key_value_xpath = "//tr[contains(., 'Key')]//select[contains(@name, '.value')]"
-            value_element = wait.until(EC.presence_of_element_located((By.XPATH, key_value_xpath)))
-
-            key_select = Select(value_element)
-
-            #wait.until(lambda d: len(key_select.options) > 1) # waiting for options to populate
-            # current_key = key_select.first_selected_option.text.strip()
-
-            curren_key = ""
-
-            if not current_key:
-
-                print("ei avainta!")
-
-            else:
-
-                print(current_key)
-            '''
-            wait = WebDriverWait(self.driver, 10)
-
+            # select "work attributes"
+            type_dropdown_xpath = "//tr[contains(., 'Key')]//select[contains(@name, 'edit-work.attributes')]"
             type_element = wait.until(EC.presence_of_element_located((By.XPATH, type_dropdown_xpath)))
             type_select = Select(type_element)
 
             wait.until(lambda d: len(type_select.options) > 1) # waiting for options to populate
 
-            # if some count is 0?
+            # select "key" from "work attributes"
 
             type_select.select_by_visible_text("Key")
 
+            # check if there's a key already set
             key_value_xpath = "//tr[contains(., 'Key')]//select[contains(@name, '.value')]"
-            value_element = wait.until(EC.visibility_of_element_located((By.XPATH, key_value_xpath)))
+            value_element = wait.until(EC.presence_of_element_located((By.XPATH, key_value_xpath)))
+            key_select = Select(value_element)
+            current_key = key_select.first_selected_option.text.strip()
 
-            key_value_select = Select(value_element)
+            if not current_key:
 
-            wait.until(lambda d: len(key_value_select.options) > 1) # waiting for options to populate
+                key_select.select_by_visible_text(key)
+                
+                # add edit note
+                
+                edit_note = self.driver.find_element(By.NAME, "edit-work.edit_note")
+                edit_note.send_keys("Just testing my bot.")
+                
+                # select "Make all edits votable"
+                
+                votable_checkbox = self.driver.find_element(By.NAME, "edit-work.make_votable")
+                
+                if not votable_checkbox.is_selected():
+                    votable_checkbox.click()
+                
+                # submit the form 
 
-            key_value_select.select_by_visible_text("G major")
+                form = self.driver.find_element(By.CSS_SELECTOR, "form.edit-work")
+                form.submit()
+                
+            else:
 
-            total_height = self.driver.execute_script("return document.body.parentNode.scrollHeight")
-            total_width = self.driver.execute_script("return document.body.parentNode.scrollWidth")
-
-            current_text = type_select.first_selected_option.text.strip()
-
-            print(current_text)
-
-            self.driver.set_window_size(total_width, total_height)
-
-            self.driver.save_screenshot("element.png")
-            '''
-            #current_option = key_select.first_selected_option
-            #current_text = current_option.text.strip()
-            #current_value = current_option.get_attribute("value")
-
-            #if not current_value or current_text == "":
-            #    print("No key is currently set. Proceeding to select one...")
-            #    key_select.select_by_visible_text("G major")
-            #else:
-            #    print(f"A key is already set: {current_text}")
+                print(current_key)
 
         except Exception as e:
 
