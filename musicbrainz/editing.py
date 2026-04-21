@@ -85,7 +85,7 @@ class MusicBrainzEditing():
     def set_work_key(self, mbid, key):
 
         try:
-            
+
             self.driver.get(self.server + "/work/" + mbid + "/edit")
             wait = WebDriverWait(self.driver, 10)
 
@@ -109,27 +109,29 @@ class MusicBrainzEditing():
             if not current_key:
 
                 key_select.select_by_visible_text(key)
-                
+
                 # add edit note
-                
+
                 edit_note = self.driver.find_element(By.NAME, "edit-work.edit_note")
                 edit_note.send_keys("Just testing my bot.")
-                
+
                 # select "Make all edits votable"
-                
+
                 votable_checkbox = self.driver.find_element(By.NAME, "edit-work.make_votable")
-                
+
                 if not votable_checkbox.is_selected():
                     votable_checkbox.click()
-                
-                # submit the form 
+
+                # submit the form
 
                 form = self.driver.find_element(By.CSS_SELECTOR, "form.edit-work")
                 form.submit()
                 
-            else:
+                logger.info(f"Setting a key '{key}' for '{mbid}'")
 
-                print(current_key)
+            else:
+               
+                logger.info(f"There's already a key {currentkey} for '{mbid}'")
 
         except Exception as e:
 
