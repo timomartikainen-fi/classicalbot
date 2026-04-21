@@ -20,3 +20,4 @@ class DatabaseManager:
             if cur.description: # if there's a result set
                 return cur.fetchall()
             self.conn.commit()
+            
